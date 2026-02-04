@@ -1,0 +1,481 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.63266633607617,
+          59.8753429389072
+        ]
+      },
+      "properties": {
+        "id": 100,
+        "lastActivityAt": "2026-02-04T07:35:24.304025Z",
+        "mmsi": 595656332,
+        "startedAt": "2026-02-03T23:50:44.304025Z",
+        "type": "speed_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          6.01052487757909,
+          57.8760122493125
+        ]
+      },
+      "properties": {
+        "id": 104,
+        "lastActivityAt": "2026-01-31T09:53:43.502048Z",
+        "mmsi": 607946018,
+        "startedAt": "2026-01-31T04:53:29.502048Z",
+        "type": "unexpected_maneuver_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.76951671161885,
+          60.1422951785752
+        ]
+      },
+      "properties": {
+        "id": 98,
+        "lastActivityAt": "2026-01-29T15:26:25.228556Z",
+        "mmsi": 225908490,
+        "startedAt": "2026-01-27T15:23:35.228556Z",
+        "type": "speed_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          11.1614503229484,
+          70.8404643341495
+        ]
+      },
+      "properties": {
+        "id": 110,
+        "lastActivityAt": "2026-02-01T16:58:07.730521Z",
+        "mmsi": 484806064,
+        "startedAt": "2026-01-27T04:48:23.730521Z",
+        "type": "jumping_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          5.69086667144291,
+          63.9730229940365
+        ]
+      },
+      "properties": {
+        "id": 106,
+        "lastActivityAt": "2026-02-01T20:57:09.585193Z",
+        "mmsi": 299689958,
+        "startedAt": "2026-01-24T15:26:24.585193Z",
+        "type": "speed_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.72543785217056,
+          67.2211243655381
+        ]
+      },
+      "properties": {
+        "id": 124,
+        "lastActivityAt": "2026-02-01T19:11:57.6018Z",
+        "mmsi": 750216202,
+        "startedAt": "2026-01-23T14:42:46.6018Z",
+        "type": "unexpected_maneuver_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          6.5229708911605,
+          57.8926917365928
+        ]
+      },
+      "properties": {
+        "id": 103,
+        "lastActivityAt": "2026-01-26T05:17:09.437628Z",
+        "mmsi": 533469950,
+        "startedAt": "2026-01-23T03:44:00.437628Z",
+        "type": "jumping_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.19400313965161,
+          67.5827197885485
+        ]
+      },
+      "properties": {
+        "id": 117,
+        "lastActivityAt": "2026-01-24T08:18:43.20222Z",
+        "mmsi": 234143517,
+        "startedAt": "2026-01-22T19:54:52.20222Z",
+        "type": "jumping_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          33.3736135018869,
+          71.6438140152092
+        ]
+      },
+      "properties": {
+        "id": 112,
+        "lastActivityAt": "2026-01-23T14:18:02.825559Z",
+        "mmsi": 663138211,
+        "startedAt": "2026-01-22T12:06:58.825559Z",
+        "type": "jumping_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          6.75110616934578,
+          67.769977600258
+        ]
+      },
+      "properties": {
+        "id": 115,
+        "lastActivityAt": "2026-01-26T15:24:47.057286Z",
+        "mmsi": 769056757,
+        "startedAt": "2026-01-22T01:38:00.057286Z",
+        "type": "jumping_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          8.23743129478061,
+          64.92392100216
+        ]
+      },
+      "properties": {
+        "id": 107,
+        "lastActivityAt": "2026-01-23T23:37:55.614412Z",
+        "mmsi": 679862548,
+        "startedAt": "2026-01-21T05:56:23.614412Z",
+        "type": "speed_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          15.5130672335249,
+          71.7105796786686
+        ]
+      },
+      "properties": {
+        "id": 111,
+        "lastActivityAt": "2026-01-24T22:36:38.811766Z",
+        "mmsi": 263978756,
+        "startedAt": "2026-01-19T21:57:11.811766Z",
+        "type": "unexpected_maneuver_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.20162876721545,
+          67.7976789393328
+        ]
+      },
+      "properties": {
+        "id": 118,
+        "lastActivityAt": "2026-01-26T07:59:47.262132Z",
+        "mmsi": 705009839,
+        "startedAt": "2026-01-19T14:38:02.262132Z",
+        "type": "speed_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.46577563419558,
+          60.7334655973268
+        ]
+      },
+      "properties": {
+        "id": 101,
+        "lastActivityAt": "2026-01-18T21:48:21.367405Z",
+        "mmsi": 431121832,
+        "startedAt": "2026-01-18T08:31:28.367405Z",
+        "type": "speed_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.47956828168086,
+          68.0787409201611
+        ]
+      },
+      "properties": {
+        "id": 121,
+        "lastActivityAt": "2026-01-18T04:46:01.379201Z",
+        "mmsi": 446136317,
+        "startedAt": "2026-01-17T06:05:49.379201Z",
+        "type": "unexpected_maneuver_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.66129796421694,
+          67.7532020696689
+        ]
+      },
+      "properties": {
+        "id": 119,
+        "lastActivityAt": "2026-01-28T23:53:41.270847Z",
+        "mmsi": 779086154,
+        "startedAt": "2026-01-16T23:50:28.270847Z",
+        "type": "jumping_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.00920910335449,
+          68.0067924959172
+        ]
+      },
+      "properties": {
+        "id": 120,
+        "lastActivityAt": "2026-01-26T01:08:06.296306Z",
+        "mmsi": 218225803,
+        "startedAt": "2026-01-16T06:29:08.296306Z",
+        "type": "speed_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          14.2161677710847,
+          70.2377213224107
+        ]
+      },
+      "properties": {
+        "id": 109,
+        "lastActivityAt": "2026-01-30T04:08:14.72076Z",
+        "mmsi": 464221878,
+        "startedAt": "2026-01-16T03:00:19.72076Z",
+        "type": "unexpected_maneuver_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          8.89064581666108,
+          67.5907541311614
+        ]
+      },
+      "properties": {
+        "id": 123,
+        "lastActivityAt": "2026-01-24T23:08:46.547934Z",
+        "mmsi": 609273773,
+        "startedAt": "2026-01-15T16:42:00.547934Z",
+        "type": "speed_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          11.2963176136798,
+          69.4500646127426
+        ]
+      },
+      "properties": {
+        "id": 108,
+        "lastActivityAt": "2026-01-27T19:16:02.684001Z",
+        "mmsi": 382905550,
+        "startedAt": "2026-01-15T12:15:19.684001Z",
+        "type": "speed_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.796875104282,
+          70.7735037046812
+        ]
+      },
+      "properties": {
+        "id": 113,
+        "lastActivityAt": "2026-01-31T17:12:03.909061Z",
+        "mmsi": 216057203,
+        "startedAt": "2026-01-14T01:49:05.909061Z",
+        "type": "jumping_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.29764150994598,
+          63.6563075736553
+        ]
+      },
+      "properties": {
+        "id": 105,
+        "lastActivityAt": "2026-01-27T22:16:53.549816Z",
+        "mmsi": 596835434,
+        "startedAt": "2026-01-13T21:09:06.549816Z",
+        "type": "speed_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          34.8819022732588,
+          71.1300523499733
+        ]
+      },
+      "properties": {
+        "id": 114,
+        "lastActivityAt": "2026-01-28T07:28:51.970213Z",
+        "mmsi": 711561025,
+        "startedAt": "2026-01-13T09:35:25.970213Z",
+        "type": "jumping_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          5.90594405848162,
+          58.0977701255019
+        ]
+      },
+      "properties": {
+        "id": 102,
+        "lastActivityAt": "2026-01-13T23:50:34.422554Z",
+        "mmsi": 299964321,
+        "startedAt": "2026-01-10T23:50:07.422554Z",
+        "type": "speed_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.66270666241542,
+          60.4663838328461
+        ]
+      },
+      "properties": {
+        "id": 99,
+        "lastActivityAt": "2026-01-25T02:00:28.266653Z",
+        "mmsi": 213700367,
+        "startedAt": "2026-01-08T18:09:32.266653Z",
+        "type": "unexpected_maneuver_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.48973939874057,
+          67.8659292364599
+        ]
+      },
+      "properties": {
+        "id": 116,
+        "lastActivityAt": "2026-01-09T17:36:32.125564Z",
+        "mmsi": 377698617,
+        "startedAt": "2026-01-06T15:11:10.125564Z",
+        "type": "speed_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.76617889758143,
+          60.2120135283247
+        ]
+      },
+      "properties": {
+        "id": 97,
+        "lastActivityAt": "2026-01-07T04:17:08.071303Z",
+        "mmsi": 631543708,
+        "startedAt": "2026-01-05T08:37:14.071303Z",
+        "type": "speed_anomaly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          8.59132633954368,
+          68.1385269501403
+        ]
+      },
+      "properties": {
+        "id": 122,
+        "lastActivityAt": "2026-01-16T05:59:19.472855Z",
+        "mmsi": 727693036,
+        "startedAt": "2026-01-05T04:05:17.472855Z",
+        "type": "jumping_anomaly"
+      }
+    }
+  ]
+}

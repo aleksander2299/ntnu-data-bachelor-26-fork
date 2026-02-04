@@ -1,0 +1,258 @@
+package handlers
+
+import (
+	"database/sql"
+	"strconv"
+	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/kyv-ekstern/ntnu-bachelor-26-ais-anomaly-api/models"
+)
+
+// AnomalyHandler handles anomaly-related HTTP requests
+type AnomalyHandler struct {
+	db *sql.DB
+}
+
+// NewAnomalyHandler creates a new AnomalyHandler
+func NewAnomalyHandler(db *sql.DB) *AnomalyHandler {
+	return &AnomalyHandler{db: db}
+}
+
+// GetAnomalyGroups returns anomaly groups filtered by date range
+// Query params: start_date, end_date (format: YYYY-MM-DD or RFC3339)
+func (h *AnomalyHandler) GetAnomalyGroups(c *fiber.Ctx) error {
+	// Parse date parameters
+	startDateStr := c.Query("start_date")
+	endDateStr := c.Query("end_date")
+
+	var startDate, endDate time.Time
+	var err error
+
+	// Default to last 30 days if no dates provided
+	if startDateStr == "" {
+		startDate = time.Now().AddDate(0, -1, 0)
+	} else {
+		startDate, err = parseDate(startDateStr)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(models.ErrorResponse{
+				Error:   "invalid_start_date",
+				Message: "Invalid start_date format. Use YYYY-MM-DD or RFC3339 format.",
+			})
+		}
+	}
+
+	if endDateStr == "" {
+		endDate = time.Now()
+	} else {
+		endDate, err = parseDate(endDateStr)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(models.ErrorResponse{
+				Error:   "invalid_end_date",
+				Message: "Invalid end_date format. Use YYYY-MM-DD or RFC3339 format.",
+			})
+		}
+	}
+
+	// Query the database
+	query := `
+		SELECT 
+			id, 
+			type, 
+			mmsi, 
+			started_at, 
+			last_activity_at,
+			ST_Y(position) as latitude,
+			ST_X(position) as longitude
+		FROM anomaly_groups
+		WHERE started_at >= $1 AND started_at <= $2
+		ORDER BY started_at DESC
+	`
+
+	rows, err := h.db.Query(query, startDate, endDate)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(models.ErrorResponse{
+			Error:   "database_error",
+			Message: "Failed to query anomaly groups.",
+		})
+	}
+	defer rows.Close()
+
+	var anomalyGroups []models.AnomalyGroup
+	for rows.Next() {
+		var ag models.AnomalyGroup
+		err := rows.Scan(
+			&ag.ID,
+			&ag.Type,
+			&ag.MMSI,
+			&ag.StartedAt,
+			&ag.LastActivityAt,
+			&ag.Latitude,
+			&ag.Longitude,
+		)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(models.ErrorResponse{
+				Error:   "scan_error",
+				Message: "Failed to parse anomaly group data.",
+			})
+		}
+		anomalyGroups = append(anomalyGroups, ag)
+	}
+
+	if anomalyGroups == nil {
+		anomalyGroups = []models.AnomalyGroup{}
+	}
+
+	return c.JSON(models.AnomalyGroupsToGeoJSON(anomalyGroups))
+}
+
+// GetAnomalyGroupByID returns a single anomaly group by ID with its anomalies
+func (h *AnomalyHandler) GetAnomalyGroupByID(c *fiber.Ctx) error {
+	idStr := c.Params("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(models.ErrorResponse{
+			Error:   "invalidId",
+			Message: "Invalid anomaly group ID.",
+		})
+	}
+
+	// Query anomaly group
+	query := `
+		SELECT 
+			id, 
+			type, 
+			mmsi, 
+			started_at, 
+			last_activity_at,
+			ST_Y(position) as latitude,
+			ST_X(position) as longitude
+		FROM anomaly_groups
+		WHERE id = $1
+	`
+
+	var ag models.AnomalyGroup
+	err = h.db.QueryRow(query, id).Scan(
+		&ag.ID,
+		&ag.Type,
+		&ag.MMSI,
+		&ag.StartedAt,
+		&ag.LastActivityAt,
+		&ag.Latitude,
+		&ag.Longitude,
+	)
+
+	if err == sql.ErrNoRows {
+		return c.Status(fiber.StatusNotFound).JSON(models.ErrorResponse{
+			Error:   "notFound",
+			Message: "Anomaly group not found.",
+		})
+	}
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(models.ErrorResponse{
+			Error:   "databaseError",
+			Message: "Failed to query anomaly group.",
+		})
+	}
+
+	// Query anomalies for this group
+	anomalyQuery := `
+		SELECT 
+			id, 
+			type, 
+			metadata, 
+			created_at, 
+			mmsi, 
+			anomaly_group_id, 
+			data_source
+		FROM anomalies
+		WHERE anomaly_group_id = $1
+		ORDER BY created_at DESC
+	`
+
+	rows, err := h.db.Query(anomalyQuery, id)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(models.ErrorResponse{
+			Error:   "databaseError",
+			Message: "Failed to query anomalies.",
+		})
+	}
+	defer rows.Close()
+
+	var anomalies []models.Anomaly
+	for rows.Next() {
+		var a models.Anomaly
+		err := rows.Scan(
+			&a.ID,
+			&a.Type,
+			&a.Metadata,
+			&a.CreatedAt,
+			&a.MMSI,
+			&a.AnomalyGroupID,
+			&a.DataSource,
+		)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(models.ErrorResponse{
+				Error:   "scanError",
+				Message: "Failed to parse anomaly data.",
+			})
+		}
+		anomalies = append(anomalies, a)
+	}
+
+	if anomalies == nil {
+		anomalies = []models.Anomaly{}
+	}
+
+	// Convert anomalies to a slice of maps for GeoJSON properties
+	anomalyData := make([]map[string]interface{}, len(anomalies))
+	for i, a := range anomalies {
+		anomalyData[i] = map[string]interface{}{
+			"id":             a.ID,
+			"type":           a.Type,
+			"metadata":       a.Metadata,
+			"createdAt":      a.CreatedAt,
+			"mmsi":           a.MMSI,
+			"anomalyGroupId": a.AnomalyGroupID,
+			"dataSource":     a.DataSource,
+		}
+	}
+
+	// Build GeoJSON Feature with anomalies included
+	feature := models.GeoJSONFeature{
+		Type: "Feature",
+		Geometry: models.GeoJSONGeometry{
+			Type:        "Point",
+			Coordinates: []float64{ag.Longitude, ag.Latitude},
+		},
+		Properties: map[string]interface{}{
+			"id":             ag.ID,
+			"type":           ag.Type,
+			"mmsi":           ag.MMSI,
+			"startedAt":      ag.StartedAt,
+			"lastActivityAt": ag.LastActivityAt,
+			"anomalies":      anomalyData,
+		},
+	}
+
+	return c.JSON(feature)
+}
+
+// parseDate attempts to parse a date string in multiple formats
+func parseDate(dateStr string) (time.Time, error) {
+	formats := []string{
+		"2006-01-02",
+		time.RFC3339,
+		"2006-01-02T15:04:05",
+		"2006-01-02 15:04:05",
+	}
+
+	for _, format := range formats {
+		if t, err := time.Parse(format, dateStr); err == nil {
+			return t, nil
+		}
+	}
+
+	return time.Time{}, fiber.NewError(fiber.StatusBadRequest, "invalid date format")
+}
