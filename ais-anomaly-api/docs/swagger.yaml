@@ -1,0 +1,145 @@
+basePath: /api/v1
+definitions:
+  models.Anomaly:
+    properties:
+      anomalyGroupId:
+        example: 1
+        type: integer
+      createdAt:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      dataSource:
+        example: SYNTHETIC
+        type: string
+      id:
+        example: 1
+        type: integer
+      metadata:
+        type: object
+    type: object
+  models.AnomalyGroup:
+    properties:
+      id:
+        example: 1
+        type: integer
+      lastActivityAt:
+        example: "2024-01-15T14:30:00Z"
+        type: string
+      latitude:
+        example: 59.9139
+        type: number
+      longitude:
+        example: 10.7522
+        type: number
+      mmsi:
+        example: 123456789
+        type: integer
+      startedAt:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      type:
+        example: speed_anomaly
+        type: string
+    type: object
+  models.AnomalyGroupWithAnomalies:
+    properties:
+      anomalies:
+        items:
+          $ref: '#/definitions/models.Anomaly'
+        type: array
+      id:
+        example: 1
+        type: integer
+      lastActivityAt:
+        example: "2024-01-15T14:30:00Z"
+        type: string
+      latitude:
+        example: 59.9139
+        type: number
+      longitude:
+        example: 10.7522
+        type: number
+      mmsi:
+        example: 123456789
+        type: integer
+      startedAt:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      type:
+        example: speed_anomaly
+        type: string
+    type: object
+  models.ErrorResponse:
+    properties:
+      error:
+        example: invalid_request
+        type: string
+      message:
+        example: The request parameters are invalid
+        type: string
+    type: object
+host: localhost:3000
+info:
+  contact: {}
+  description: API for querying AIS anomaly detection data
+  title: AIS Anomaly Detection API
+  version: "1.0"
+paths:
+  /anomaly-groups:
+    get:
+      parameters:
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.AnomalyGroup'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get anomaly groups
+      tags:
+      - anomaly-groups
+  /anomaly-groups/{id}:
+    get:
+      parameters:
+      - description: Anomaly Group ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AnomalyGroupWithAnomalies'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get anomaly group by ID
+      tags:
+      - anomaly-groups
+swagger: "2.0"

@@ -19,8 +19,15 @@ func NewAnomalyHandler(db *sql.DB) *AnomalyHandler {
 	return &AnomalyHandler{db: db}
 }
 
-// GetAnomalyGroups returns anomaly groups filtered by date range
-// Query params: start_date, end_date (format: YYYY-MM-DD or RFC3339)
+// GetAnomalyGroups godoc
+// @Summary Get anomaly groups
+// @Tags anomaly-groups
+// @Param start_date query string false "Start date (YYYY-MM-DD)"
+// @Param end_date query string false "End date (YYYY-MM-DD)"
+// @Success 200 {array} models.AnomalyGroup
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /anomaly-groups [get]
 func (h *AnomalyHandler) GetAnomalyGroups(c *fiber.Ctx) error {
 	// Parse date parameters
 	startDateStr := c.Query("start_date")
@@ -106,7 +113,15 @@ func (h *AnomalyHandler) GetAnomalyGroups(c *fiber.Ctx) error {
 	return c.JSON(models.AnomalyGroupsToGeoJSON(anomalyGroups))
 }
 
-// GetAnomalyGroupByID returns a single anomaly group by ID with its anomalies
+// GetAnomalyGroupByID godoc
+// @Summary Get anomaly group by ID
+// @Tags anomaly-groups
+// @Param id path int true "Anomaly Group ID"
+// @Success 200 {object} models.AnomalyGroupWithAnomalies
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /anomaly-groups/{id} [get]
 func (h *AnomalyHandler) GetAnomalyGroupByID(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
@@ -182,15 +197,15 @@ func (h *AnomalyHandler) GetAnomalyGroupByID(c *fiber.Ctx) error {
 
 	var anomalies []models.Anomaly
 	for rows.Next() {
-		var a models.Anomaly
+		var aDB models.AnomalyDB
 		err := rows.Scan(
-			&a.ID,
-			&a.Type,
-			&a.Metadata,
-			&a.CreatedAt,
-			&a.MMSI,
-			&a.AnomalyGroupID,
-			&a.DataSource,
+			&aDB.ID,
+			&aDB.Type,
+			&aDB.Metadata,
+			&aDB.CreatedAt,
+			&aDB.MMSI,
+			&aDB.AnomalyGroupID,
+			&aDB.DataSource,
 		)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(models.ErrorResponse{
@@ -198,7 +213,8 @@ func (h *AnomalyHandler) GetAnomalyGroupByID(c *fiber.Ctx) error {
 				Message: "Failed to parse anomaly data.",
 			})
 		}
-		anomalies = append(anomalies, a)
+		// Transform to API model (removing type and mmsi)
+		anomalies = append(anomalies, aDB.ToAPIAnomaly())
 	}
 
 	if anomalies == nil {
@@ -210,10 +226,8 @@ func (h *AnomalyHandler) GetAnomalyGroupByID(c *fiber.Ctx) error {
 	for i, a := range anomalies {
 		anomalyData[i] = map[string]interface{}{
 			"id":             a.ID,
-			"type":           a.Type,
 			"metadata":       a.Metadata,
 			"createdAt":      a.CreatedAt,
-			"mmsi":           a.MMSI,
 			"anomalyGroupId": a.AnomalyGroupID,
 			"dataSource":     a.DataSource,
 		}

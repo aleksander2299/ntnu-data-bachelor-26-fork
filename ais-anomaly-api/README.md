@@ -7,8 +7,32 @@ A read-only REST API for accessing AIS anomaly data, built with [Go Fiber](https
 - 🚀 Fast and lightweight API built with Fiber
 - 📊 Query anomaly groups by date range
 - 🔍 Get individual anomaly groups and their anomalies
-- 🐳 Docker support for easy deployment
+- � **Interactive Swagger/OpenAPI documentation**
+- �🐳 Docker support for easy deployment
 - 🏥 Health check endpoint
+
+## 📚 API Documentation
+
+**Interactive Swagger UI is available at:**
+
+### `http://localhost:3000/swagger/index.html`
+
+The Swagger documentation provides:
+- Complete endpoint documentation
+- Request/response schemas with examples
+- Try-it-out functionality to test endpoints
+- Model definitions
+
+### Regenerating Swagger Docs
+
+After modifying API endpoints or models:
+
+```bash
+cd ais-anomaly-api
+swag init
+# or
+/usr/local/go/bin/swag init
+```
 
 ## API Endpoints
 
