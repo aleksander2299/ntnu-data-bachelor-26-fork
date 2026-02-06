@@ -55,5 +55,27 @@ services:
     profiles:
       - seed
 
+  ais-anomaly-api:
+    build:
+      context: ./ais-anomaly-api
+      dockerfile: Dockerfile
+    container_name: ntnu-ais-anomalies-api
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: birdsarentreal
+      DB_NAME: ais
+      PORT: 3000
+      # Set SWAGGER_AUTH_ENABLED=true in production to enable basic auth
+      # SWAGGER_AUTH_ENABLED: "true"
+      # SWAGGER_USER: admin
+      # SWAGGER_PASSWORD: your-secure-password
+
 volumes:
   ntnu_ais_postgres_data:

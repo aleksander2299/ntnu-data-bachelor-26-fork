@@ -5,13 +5,14 @@ import (
 	"os"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/basicauth"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/swagger"
 
 	"github.com/kyv-ekstern/ntnu-bachelor-26-ais-anomaly-api/db"
-	_ "github.com/kyv-ekstern/ntnu-bachelor-26-ais-anomaly-api/docs" // This line is important for Swagger
+	_ "github.com/kyv-ekstern/ntnu-bachelor-26-ais-anomaly-api/docs"
 	"github.com/kyv-ekstern/ntnu-bachelor-26-ais-anomaly-api/handlers"
 )
 
@@ -38,8 +39,30 @@ func main() {
 	app.Use(recover.New())
 	app.Use(cors.New())
 
-	// Swagger endpoint
-	app.Get("/swagger/*", swagger.HandlerDefault)
+	// Swagger endpoint - optionally protected with basic auth
+	swaggerAuthEnabled := os.Getenv("SWAGGER_AUTH_ENABLED") == "true"
+
+	if swaggerAuthEnabled {
+		swaggerUser := os.Getenv("SWAGGER_USER")
+		if swaggerUser == "" {
+			swaggerUser = "admin"
+		}
+		swaggerPassword := os.Getenv("SWAGGER_PASSWORD")
+		if swaggerPassword == "" {
+			swaggerPassword = "admin"
+		}
+
+		log.Printf("Swagger basic auth enabled - User: %s", swaggerUser)
+		swaggerGroup := app.Group("/swagger", basicauth.New(basicauth.Config{
+			Users: map[string]string{
+				swaggerUser: swaggerPassword,
+			},
+		}))
+		swaggerGroup.Get("/*", swagger.HandlerDefault)
+	} else {
+		log.Println("Swagger basic auth disabled")
+		app.Get("/swagger/*", swagger.HandlerDefault)
+	}
 
 	// Initialize handlers
 	anomalyHandler := handlers.NewAnomalyHandler(database)
