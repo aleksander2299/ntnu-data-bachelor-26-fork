@@ -61,11 +61,15 @@ func main() {
 		swaggerGroup.Get("/*", swagger.HandlerDefault)
 	} else {
 		log.Println("Swagger basic auth disabled")
+		app.Get("/swagger", func(c *fiber.Ctx) error {
+			return c.Redirect("/swagger/index.html")
+		})
 		app.Get("/swagger/*", swagger.HandlerDefault)
 	}
 
 	// Initialize handlers
 	anomalyHandler := handlers.NewAnomalyHandler(database)
+	baseStationHandler := handlers.NewBaseStationHandler()
 
 	// Routes
 	api := app.Group("/api/v1")
@@ -81,6 +85,10 @@ func main() {
 	// Anomaly group routes
 	api.Get("/anomaly-groups", anomalyHandler.GetAnomalyGroups)
 	api.Get("/anomaly-groups/:id", anomalyHandler.GetAnomalyGroupByID)
+
+	// Base station routes
+	api.Get("/base-stations", baseStationHandler.GetBaseStations)
+	api.Get("/base-stations/:id", baseStationHandler.GetBaseStationByID)
 
 	// Get port from environment variable or default to 3000
 	port := os.Getenv("PORT")

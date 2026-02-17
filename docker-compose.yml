@@ -55,6 +55,24 @@ services:
     profiles:
       - seed
 
+  db-reseeder:
+    build:
+      context: ./db
+      dockerfile: Dockerfile
+    container_name: ntnu-ais-anomalies-reseeder
+    depends_on:
+      db-migration:
+        condition: service_completed_successfully
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: birdsarentreal
+      DB_NAME: ais
+    command: ["/db-migration", "-reseed"]
+    profiles:
+      - reseed
+
   ais-anomaly-api:
     build:
       context: ./ais-anomaly-api

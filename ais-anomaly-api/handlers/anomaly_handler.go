@@ -180,7 +180,8 @@ func (h *AnomalyHandler) GetAnomalyGroupByID(c *fiber.Ctx) error {
 			created_at, 
 			mmsi, 
 			anomaly_group_id, 
-			data_source
+			data_source,
+			source_id
 		FROM anomalies
 		WHERE anomaly_group_id = $1
 		ORDER BY created_at DESC
@@ -206,6 +207,7 @@ func (h *AnomalyHandler) GetAnomalyGroupByID(c *fiber.Ctx) error {
 			&aDB.MMSI,
 			&aDB.AnomalyGroupID,
 			&aDB.DataSource,
+			&aDB.SourceID,
 		)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(models.ErrorResponse{
@@ -224,13 +226,17 @@ func (h *AnomalyHandler) GetAnomalyGroupByID(c *fiber.Ctx) error {
 	// Convert anomalies to a slice of maps for GeoJSON properties
 	anomalyData := make([]map[string]interface{}, len(anomalies))
 	for i, a := range anomalies {
-		anomalyData[i] = map[string]interface{}{
+		anomalyMap := map[string]interface{}{
 			"id":             a.ID,
 			"metadata":       a.Metadata,
 			"createdAt":      a.CreatedAt,
 			"anomalyGroupId": a.AnomalyGroupID,
 			"dataSource":     a.DataSource,
 		}
+		if a.SourceID != nil {
+			anomalyMap["sourceId"] = *a.SourceID
+		}
+		anomalyData[i] = anomalyMap
 	}
 
 	// Build GeoJSON Feature with anomalies included

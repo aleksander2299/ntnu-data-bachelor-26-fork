@@ -96,6 +96,67 @@
                     }
                 }
             }
+        },
+        "/base-stations": {
+            "get": {
+                "description": "Returns all base stations along the Norwegian coast as GeoJSON",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "base-stations"
+                ],
+                "summary": "Get all base stations",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.GeoJSONFeatureCollection"
+                        }
+                    }
+                }
+            }
+        },
+        "/base-stations/{id}": {
+            "get": {
+                "description": "Returns a single base station by its ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "base-stations"
+                ],
+                "summary": "Get base station by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Base Station ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.BaseStation"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -120,6 +181,10 @@
                 },
                 "metadata": {
                     "type": "object"
+                },
+                "sourceId": {
+                    "type": "integer",
+                    "example": 1
                 }
             }
         },
@@ -195,6 +260,27 @@
                 }
             }
         },
+        "models.BaseStation": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "latitude": {
+                    "type": "number",
+                    "example": 58.96463228151012
+                },
+                "longitude": {
+                    "type": "number",
+                    "example": 5.738597994470069
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Stavanger"
+                }
+            }
+        },
         "models.ErrorResponse": {
             "type": "object",
             "properties": {
@@ -205,6 +291,55 @@
                 "message": {
                     "type": "string",
                     "example": "The request parameters are invalid"
+                }
+            }
+        },
+        "models.GeoJSONFeature": {
+            "type": "object",
+            "properties": {
+                "geometry": {
+                    "$ref": "#/definitions/models.GeoJSONGeometry"
+                },
+                "properties": {
+                    "type": "object"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "Feature"
+                }
+            }
+        },
+        "models.GeoJSONFeatureCollection": {
+            "type": "object",
+            "properties": {
+                "features": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.GeoJSONFeature"
+                    }
+                },
+                "type": {
+                    "type": "string",
+                    "example": "FeatureCollection"
+                }
+            }
+        },
+        "models.GeoJSONGeometry": {
+            "type": "object",
+            "properties": {
+                "coordinates": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    },
+                    "example": [
+                        10.7522,
+                        59.9139
+                    ]
+                },
+                "type": {
+                    "type": "string",
+                    "example": "Point"
                 }
             }
         }

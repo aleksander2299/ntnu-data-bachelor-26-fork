@@ -81,6 +81,23 @@ Dette kjører migrering og deretter seeding med testdata. Merk at data er additi
 
 ---
 
+### Tømme og re-seede databasen (reseed)
+
+For å slette all eksisterende data og populere databasen med nye syntetiske testdata, bruk `reseed`-profilen:
+
+```bash
+docker compose --profile reseed up
+```
+
+Dette vil:
+1. Kjøre migreringer
+2. Tømme alle tabeller (`anomalies` og `anomaly_groups`)
+3. Populere databasen med nye syntetiske testdata
+
+Bruk dette når du ønsker en ren database med ferske testdata, uten å måtte slette hele databasevolumet.
+
+---
+
 ### Kun starte API-et
 
 Hvis databasen allerede kjører, kan du starte kun API-et:

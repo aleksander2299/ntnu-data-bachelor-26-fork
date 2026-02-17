@@ -16,6 +16,7 @@ import (
 func main() {
 	// Parse command-line flags
 	seedFlag := flag.Bool("seed", false, "Seed the database with synthetic data")
+	reseedFlag := flag.Bool("reseed", false, "Clear all data and reseed the database")
 	flag.Parse()
 
 	// Read configuration from environment variables with defaults
@@ -51,6 +52,22 @@ func main() {
 	}
 
 	fmt.Println("All SQL files executed successfully!")
+
+	// Reseed: clear all data first, then seed
+	if *reseedFlag {
+		fmt.Println("\nClearing all existing data...")
+		if err := clearAllData(db); err != nil {
+			log.Fatalf("Failed to clear data: %v", err)
+		}
+		fmt.Println("All data cleared!")
+
+		fmt.Println("\nSeeding database with synthetic data...")
+		if err := SeedWithDefaultData(db); err != nil {
+			log.Fatalf("Failed to seed database: %v", err)
+		}
+		fmt.Println("Database reseeding completed successfully!")
+		return
+	}
 
 	// Seed database if flag is set
 	if *seedFlag {
@@ -123,6 +140,23 @@ func executeSQLFiles(db *sql.DB, folderPath string) error {
 		}
 
 		fmt.Printf("✓ Successfully executed %s\n", filename)
+	}
+
+	return nil
+}
+
+// clearAllData truncates all tables in the correct order (respecting foreign keys)
+func clearAllData(db *sql.DB) error {
+	// Delete in order: anomalies first (has FK to anomaly_groups), then anomaly_groups
+	tables := []string{"anomalies", "anomaly_groups"}
+
+	for _, table := range tables {
+		fmt.Printf("Clearing table %s...\n", table)
+		_, err := db.Exec(fmt.Sprintf("TRUNCATE TABLE %s RESTART IDENTITY CASCADE", table))
+		if err != nil {
+			return fmt.Errorf("failed to truncate table %s: %w", table, err)
+		}
+		fmt.Printf("✓ Cleared table %s\n", table)
 	}
 
 	return nil

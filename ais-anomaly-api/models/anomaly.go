@@ -72,6 +72,7 @@ type AnomalyDB struct {
 	MMSI           *int64          `json:"mmsi,omitempty"`
 	AnomalyGroupID *int64          `json:"anomalyGroupId,omitempty"`
 	DataSource     string          `json:"dataSource"`
+	SourceID       *int64          `json:"sourceId,omitempty"`
 }
 
 // Anomaly represents an individual anomaly for API response (without type and mmsi)
@@ -81,6 +82,7 @@ type Anomaly struct {
 	CreatedAt      time.Time       `json:"createdAt" example:"2024-01-15T10:30:00Z"`
 	AnomalyGroupID *int64          `json:"anomalyGroupId,omitempty" example:"1"`
 	DataSource     string          `json:"dataSource" example:"SYNTHETIC"`
+	SourceID       *int64          `json:"sourceId,omitempty" example:"1"`
 }
 
 // ToAPIAnomaly converts AnomalyDB to Anomaly (removing type and mmsi)
@@ -91,6 +93,7 @@ func (a *AnomalyDB) ToAPIAnomaly() Anomaly {
 		CreatedAt:      a.CreatedAt,
 		AnomalyGroupID: a.AnomalyGroupID,
 		DataSource:     a.DataSource,
+		SourceID:       a.SourceID,
 	}
 }
 

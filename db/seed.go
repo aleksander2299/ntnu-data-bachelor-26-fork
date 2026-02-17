@@ -125,6 +125,31 @@ var organizations = []string{"KYSTVERKET", "DNV", "IMO", "EMSA", "NCA", "SYNTHET
 // Stier der positions.csv kan finnes (lokal utvikling vs Docker)
 var csvPaths = []string{"positions.csv", "/app/positions.csv"}
 
+// BaseStation representerer en basestasjon langs norskekysten
+type BaseStation struct {
+	ID   int64
+	Lon  float64
+	Lat  float64
+	Name string
+}
+
+// Basestasjoner langs norskekysten (fra basestations.csv)
+var baseStations = []BaseStation{
+	{ID: 1, Lon: 5.738597994470069, Lat: 58.96463228151012, Name: "Stavanger"},
+	{ID: 2, Lon: 5.330307003639547, Lat: 60.39322039629883, Name: "Bergen"},
+	{ID: 3, Lon: 5.1027114432339715, Lat: 61.93677716068194, Name: "Måløy"},
+	{ID: 4, Lon: 7.730461036485423, Lat: 63.120549656472605, Name: "Kristiansund"},
+	{ID: 5, Lon: 0.70068909637888, Lat: 64.87943932281323, Name: "Rørvik"},
+	{ID: 6, Lon: 4.06690852740158, Lat: 67.15671646368756, Name: "Bodø"},
+	{ID: 7, Lon: 7.67446623704464, Lat: 69.58646162079535, Name: "Tromsø"},
+	{ID: 8, Lon: 4.752824449247385, Lat: 71.08926393052442, Name: "Hjelmsøya"},
+}
+
+// selectRandomBaseStation velger en tilfeldig basestasjon
+func selectRandomBaseStation(r *rand.Rand) BaseStation {
+	return baseStations[r.Intn(len(baseStations))]
+}
+
 // generateRandomMMSI genererer et tilfeldig 9-sifret MMSI-nummer
 // MMSI-nummer er typisk mellom 200000000 og 799999999
 func generateRandomMMSI(r *rand.Rand) int64 {
@@ -200,14 +225,14 @@ func varyCoordinateSlightly(r *rand.Rand, coord Coordinate) Coordinate {
 }
 
 // generatePositionReport genererer en enkelt posisjonsrapport
-func generatePositionReport(r *rand.Rand, mmsi int64, coord Coordinate, tidspunkt time.Time) PositionReport {
+func generatePositionReport(r *rand.Rand, mmsi int64, coord Coordinate, tidspunkt time.Time, sourceID int64) PositionReport {
 	return PositionReport{
 		MMSI:              mmsi,
 		MessageType:       r.Intn(3) + 1, // Meldingstype 1, 2 eller 3
 		Key:               fmt.Sprintf("%d-%s", mmsi, tidspunkt.Format("20060102150405")),
 		Timestamp:         tidspunkt.Format(time.RFC3339),
 		DataSource:        selectRandomFromList(r, dataSources),
-		SourceID:          fmt.Sprintf("SRC-%d", r.Intn(100000)),
+		SourceID:          fmt.Sprintf("%d", sourceID),
 		Latitude:          coord.Lat,
 		Longitude:         coord.Lon,
 		SpeedOverGround:   r.Float64() * 25.0,       // 0-25 knop
@@ -222,19 +247,19 @@ func generatePositionReport(r *rand.Rand, mmsi int64, coord Coordinate, tidspunk
 }
 
 // generatePositionReports genererer flere posisjonsrapporter for et skip
-func generatePositionReports(r *rand.Rand, mmsi int64, coord Coordinate, tidspunkt time.Time, antall int) []PositionReport {
+func generatePositionReports(r *rand.Rand, mmsi int64, coord Coordinate, tidspunkt time.Time, antall int, sourceID int64) []PositionReport {
 	rapporter := make([]PositionReport, antall)
 	for i := 0; i < antall; i++ {
 		// Varier posisjonen litt for hver rapport
 		varierteKoord := varyCoordinateSlightly(r, coord)
 		rapportTid := tidspunkt.Add(time.Duration(-i*5) * time.Minute)
-		rapporter[i] = generatePositionReport(r, mmsi, varierteKoord, rapportTid)
+		rapporter[i] = generatePositionReport(r, mmsi, varierteKoord, rapportTid, sourceID)
 	}
 	return rapporter
 }
 
 // generateStaticReport genererer statisk skipsinformasjon
-func generateStaticReport(r *rand.Rand, mmsi int64, tidspunkt time.Time) StaticReport {
+func generateStaticReport(r *rand.Rand, mmsi int64, tidspunkt time.Time, sourceID int64) StaticReport {
 	return StaticReport{
 		CallSign:        generateRandomCallSign(r),
 		Destination:     selectRandomFromList(r, destinations),
@@ -242,7 +267,7 @@ func generateStaticReport(r *rand.Rand, mmsi int64, tidspunkt time.Time) StaticR
 		MMSI:            mmsi,
 		ShipLength:      r.Intn(300) + 20, // 20-320 meter
 		ShipType:        r.Intn(100),
-		SourceID:        fmt.Sprintf("SRC-%d", r.Intn(100000)),
+		SourceID:        fmt.Sprintf("%d", sourceID),
 		TimestampSender: tidspunkt.Format(time.RFC3339),
 		VesselName:      generateRandomVesselName(r),
 		DataSource:      selectRandomFromList(r, dataSources),
@@ -250,13 +275,13 @@ func generateStaticReport(r *rand.Rand, mmsi int64, tidspunkt time.Time) StaticR
 }
 
 // generateMetadata genererer komplett metadata for en anomali og returnerer JSON-streng
-func generateMetadata(r *rand.Rand, mmsi int64, coord Coordinate, tidspunkt time.Time) (string, error) {
+func generateMetadata(r *rand.Rand, mmsi int64, coord Coordinate, tidspunkt time.Time, sourceID int64) (string, error) {
 	// Generer 2-5 posisjonsrapporter
 	antallRapporter := r.Intn(4) + 2
 
 	metadata := AnomalyMetadata{
-		PositionReports: generatePositionReports(r, mmsi, coord, tidspunkt, antallRapporter),
-		StaticReport:    generateStaticReport(r, mmsi, tidspunkt),
+		PositionReports: generatePositionReports(r, mmsi, coord, tidspunkt, antallRapporter, sourceID),
+		StaticReport:    generateStaticReport(r, mmsi, tidspunkt, sourceID),
 	}
 
 	jsonBytes, err := json.Marshal(metadata)
@@ -347,6 +372,7 @@ type AnomalyData struct {
 	CreatedAt  time.Time
 	MMSI       int64
 	DataSource string
+	SourceID   int64
 }
 
 // generateAnomalyGroupData genererer data for en anomaligruppe
@@ -371,7 +397,8 @@ func generateAnomalies(r *rand.Rand, gruppeData AnomalyGroupData, antall int, an
 		// Generer posisjon forskjøvet 10-500 meter fra gruppens sentrum
 		forskjovetKoord := calculateOffsetCoordinate(r, gruppeData.Position, 10, 500)
 
-		metadata, err := generateMetadata(r, gruppeData.MMSI, forskjovetKoord, createdAt)
+		baseStation := selectRandomBaseStation(r)
+		metadata, err := generateMetadata(r, gruppeData.MMSI, forskjovetKoord, createdAt, baseStation.ID)
 		if err != nil {
 			return nil, fmt.Errorf("kunne ikke generere metadata: %w", err)
 		}
@@ -382,6 +409,7 @@ func generateAnomalies(r *rand.Rand, gruppeData AnomalyGroupData, antall int, an
 			CreatedAt:  createdAt,
 			MMSI:       gruppeData.MMSI,
 			DataSource: "SYNTHETIC",
+			SourceID:   baseStation.ID,
 		}
 	}
 
@@ -407,9 +435,9 @@ func insertAnomalyGroup(db *sql.DB, data AnomalyGroupData) (int64, error) {
 // insertAnomaly setter inn en anomali i databasen
 func insertAnomaly(db *sql.DB, data AnomalyData, groupID int64) error {
 	_, err := db.Exec(`
-		INSERT INTO anomalies (type, metadata, created_at, mmsi, anomaly_group_id, data_source)
-		VALUES ($1, $2, $3, $4, $5, $6)
-	`, data.Type, data.Metadata, data.CreatedAt, data.MMSI, groupID, data.DataSource)
+		INSERT INTO anomalies (type, metadata, created_at, mmsi, anomaly_group_id, data_source, source_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+	`, data.Type, data.Metadata, data.CreatedAt, data.MMSI, groupID, data.DataSource, data.SourceID)
 
 	if err != nil {
 		return fmt.Errorf("kunne ikke sette inn anomali: %w", err)

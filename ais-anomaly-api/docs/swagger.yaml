@@ -16,6 +16,9 @@ definitions:
         type: integer
       metadata:
         type: object
+      sourceId:
+        example: 1
+        type: integer
     type: object
   models.AnomalyGroup:
     properties:
@@ -69,6 +72,21 @@ definitions:
         example: speed_anomaly
         type: string
     type: object
+  models.BaseStation:
+    properties:
+      id:
+        example: 1
+        type: integer
+      latitude:
+        example: 58.96463228151012
+        type: number
+      longitude:
+        example: 5.738597994470069
+        type: number
+      name:
+        example: Stavanger
+        type: string
+    type: object
   models.ErrorResponse:
     properties:
       error:
@@ -76,6 +94,39 @@ definitions:
         type: string
       message:
         example: The request parameters are invalid
+        type: string
+    type: object
+  models.GeoJSONFeature:
+    properties:
+      geometry:
+        $ref: '#/definitions/models.GeoJSONGeometry'
+      properties:
+        type: object
+      type:
+        example: Feature
+        type: string
+    type: object
+  models.GeoJSONFeatureCollection:
+    properties:
+      features:
+        items:
+          $ref: '#/definitions/models.GeoJSONFeature'
+        type: array
+      type:
+        example: FeatureCollection
+        type: string
+    type: object
+  models.GeoJSONGeometry:
+    properties:
+      coordinates:
+        example:
+        - 10.7522
+        - 59.9139
+        items:
+          type: number
+        type: array
+      type:
+        example: Point
         type: string
     type: object
 host: localhost:3000
@@ -142,4 +193,44 @@ paths:
       summary: Get anomaly group by ID
       tags:
       - anomaly-groups
+  /base-stations:
+    get:
+      description: Returns all base stations along the Norwegian coast as GeoJSON
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.GeoJSONFeatureCollection'
+      summary: Get all base stations
+      tags:
+      - base-stations
+  /base-stations/{id}:
+    get:
+      description: Returns a single base station by its ID
+      parameters:
+      - description: Base Station ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.BaseStation'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get base station by ID
+      tags:
+      - base-stations
 swagger: "2.0"
