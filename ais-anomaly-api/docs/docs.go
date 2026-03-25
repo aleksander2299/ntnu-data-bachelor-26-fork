@@ -188,6 +188,10 @@ const docTemplate = `{
                 "metadata": {
                     "type": "object"
                 },
+                "signalStrength": {
+                    "type": "number",
+                    "example": -95.5
+                },
                 "sourceId": {
                     "type": "integer",
                     "example": 1

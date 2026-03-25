@@ -16,6 +16,9 @@ definitions:
         type: integer
       metadata:
         type: object
+      signalStrength:
+        example: -95.5
+        type: number
       sourceId:
         example: 1
         type: integer

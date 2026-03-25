@@ -234,7 +234,7 @@ func haversineNM(lat1, lon1, lat2, lon2 float64) float64 {
 // (400 nautical miles away). Gaussian noise and occasional atmospheric fading
 // events are added to mimic real-world propagation variability.
 func calculateSignalStrength(r *rand.Rand, vesselLat, vesselLon float64, bs BaseStation) float64 {
-	const maxRangeNM = 400.0
+	const maxRangeNM = 700.0
 	distNM := haversineNM(vesselLat, vesselLon, bs.Lat, bs.Lon)
 
 	raw := 1.0 - distNM/maxRangeNM

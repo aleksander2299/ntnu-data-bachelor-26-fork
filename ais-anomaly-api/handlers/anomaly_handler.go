@@ -181,7 +181,8 @@ func (h *AnomalyHandler) GetAnomalyGroupByID(c *fiber.Ctx) error {
 			mmsi, 
 			anomaly_group_id, 
 			data_source,
-			source_id
+			source_id,
+			signal_strength
 		FROM anomalies
 		WHERE anomaly_group_id = $1
 		ORDER BY created_at DESC
@@ -208,6 +209,7 @@ func (h *AnomalyHandler) GetAnomalyGroupByID(c *fiber.Ctx) error {
 			&aDB.AnomalyGroupID,
 			&aDB.DataSource,
 			&aDB.SourceID,
+			&aDB.SignalStrength,
 		)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(models.ErrorResponse{
@@ -235,6 +237,9 @@ func (h *AnomalyHandler) GetAnomalyGroupByID(c *fiber.Ctx) error {
 		}
 		if a.SourceID != nil {
 			anomalyMap["sourceId"] = *a.SourceID
+		}
+		if a.SignalStrength != nil {
+			anomalyMap["signalStrength"] = *a.SignalStrength
 		}
 		anomalyData[i] = anomalyMap
 	}
