@@ -113,6 +113,166 @@ func (h *AnomalyHandler) GetAnomalyGroups(c *fiber.Ctx) error {
 	return c.JSON(models.AnomalyGroupsToGeoJSON(anomalyGroups))
 }
 
+// GetAnomalyGroupsByMMSI godoc
+// @Summary Get anomaly groups by MMSI
+// @Tags anomaly-groups
+// @Param mmsi path int true "MMSI"
+// @Success 200 {object} models.GeoJSONFeatureCollection
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /anomaly-groups/mmsi/{mmsi}[get]
+func (h *AnomalyHandler) GetAnomalyGroupsByMMSI(c *fiber.Ctx) error {
+	mmsiStr := c.Params("mmsi")
+	mmsi, err := strconv.ParseInt(mmsiStr, 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(models.ErrorResponse{
+			Error:   "invalidMmsi",
+			Message: "Invalid anomaly group mmsi.",
+		})
+	}
+
+	// Query anomaly group
+	query := `
+		SELECT 
+			id, 
+			type, 
+			mmsi, 
+			started_at, 
+			last_activity_at,
+			ST_Y(position) as latitude,
+			ST_X(position) as longitude
+		FROM anomaly_groups
+		WHERE mmsi = $1
+		ORDER BY started_at DESC
+	`
+
+	rows, err = h.db.Query(query, mmsi)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(models.ErrorResponse{
+			Error:   "databaseError",
+			Message: "Failed to query anomaly groups.",
+		})
+	}
+	defer rows.Close()
+
+	// Holding All GeoJSON Features
+	var features[]models.GeoJSONFeature
+
+	for rows.Next() {
+		var ag models.AnomalyGroup
+
+		err := rows.Scan(
+		&ag.ID,
+		&ag.Type,
+		&ag.MMSI,
+		&ag.StartedAt,
+		&ag.LastActivityAt,
+		&ag.Latitude,
+		&ag.Longitude,
+	)
+	if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(models.ErrorResponse{
+				Error:   "scanError",
+				Message: "Failed to parse anomaly group data.",
+			})
+		}
+
+		// Used some help from AI for this query in the loop
+		anomalyQuery := `
+			SELECT 
+				id, 
+				type, 
+				metadata, 
+				created_at, 
+				mmsi, 
+				anomaly_group_id, 
+				data_source,
+				source_id,
+				signal_strength
+			FROM anomalies
+			WHERE anomaly_group_id = $1
+			ORDER BY created_at DESC
+		`
+
+		anomalyRows, err := h.db.Query(anomalyQuery, ag.ID)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(models.ErrorResponse{
+				Error:   "databaseError",
+				Message: "Failed to query anomalies.",
+			})
+		}
+
+		// Used AI to help create the anomalyRows Loop to make sure data was handled and parsed properly
+		var anomalies[]models.Anomaly
+		for anomalyRows.Next() {
+			var aDB models.AnomalyDB
+			err := anomalyRows.Scan(
+				&ag.ID,
+				&ag.Type,
+				&aDB.Metadata,
+				&aDB.CreatedAt,
+				&ag.MMSI,
+				&aDB.AnomalyGroupID,
+				&aDB.DataSource,
+				&ag.StartedAt,
+				&aDB.SourceID,
+				&aDB.SignalStrength,
+			)
+			if err != nil {
+				anomalyRows.Close() 
+				return c.Status(fiber.StatusInternalServerError).JSON(models.ErrorResponse{
+					Error:   "scanError",
+					Message: "Failed to parse anomaly data.",
+				})
+			}
+			anomalies = append(anomalies, aDB.ToAPIAnomaly())
+		}
+	}
+	anomalyRows.Close()
+	
+	if anomalies == nil {
+			anomalies =[]models.Anomaly{}
+	}
+
+	// Convert anomalies to a slice of maps for GeoJSON properties
+	anomalyData := make([]map[string]interface{}, len(anomalies))
+	for i, a := range anomalies {
+		anomalyMap := map[string]interface{}{
+			"id":             a.ID,
+			"metadata":       a.Metadata,
+			"createdAt":      a.CreatedAt,
+			"anomalyGroupId": a.AnomalyGroupID,
+			"dataSource":     a.DataSource,
+		}
+		if a.SourceID != nil {
+			anomalyMap["sourceId"] = *a.SourceID
+		}
+		if a.SignalStrength != nil {
+			anomalyMap["signalStrength"] = *a.SignalStrength
+		}
+		anomalyData[i] = anomalyMap
+	}
+
+	// Build GeoJSON Feature with anomalies included
+	feature := models.GeoJSONFeature{
+		Type: "Feature",
+		Geometry: models.GeoJSONGeometry{
+			Type:        "Point",
+			Coordinates: []float64{ag.Longitude, ag.Latitude},
+		},
+		Properties: map[string]interface{}{
+			"id":             ag.ID,
+			"type":           ag.Type,
+			"mmsi":           ag.MMSI,
+			"startedAt":      ag.StartedAt,
+			"lastActivityAt": ag.LastActivityAt,
+			"anomalies":      anomalyData,
+		},
+	}
+
+	return c.JSON(feature)
+}
+
 // GetAnomalyGroupByID godoc
 // @Summary Get anomaly group by ID
 // @Tags anomaly-groups

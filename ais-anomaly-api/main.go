@@ -84,6 +84,11 @@ func main() {
 
 	// Anomaly group routes
 	api.Get("/anomaly-groups", anomalyHandler.GetAnomalyGroups)
+
+	api.Get("/anomaly-groups/mmsi/:mmsi", anomalyHandler.GetAnomalyGroupsByMMSI)
+	api.Get("/anomaly-groups/type/:type", anomalyHandler.GetAnomalyGroupsByType)
+
+	// Id needs to be last
 	api.Get("/anomaly-groups/:id", anomalyHandler.GetAnomalyGroupByID)
 
 	// Base station routes
