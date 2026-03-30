@@ -86,7 +86,7 @@ func main() {
 	api.Get("/anomaly-groups", anomalyHandler.GetAnomalyGroups)
 
 	api.Get("/anomaly-groups/mmsi/:mmsi", anomalyHandler.GetAnomalyGroupsByMMSI)
-	api.Get("/anomaly-groups/type/:type", anomalyHandler.GetAnomalyGroupsByType)
+	//api.Get("/anomaly-groups/type/:type", anomalyHandler.GetAnomalyGroupsByType)
 
 	// Id needs to be last
 	api.Get("/anomaly-groups/:id", anomalyHandler.GetAnomalyGroupByID)
