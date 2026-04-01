@@ -113,6 +113,47 @@ func (h *AnomalyHandler) GetAnomalyGroups(c *fiber.Ctx) error {
 	return c.JSON(models.AnomalyGroupsToGeoJSON(anomalyGroups))
 }
 
+func (h *AnomalyHandler) GetAnomalyGroups(c *fiber.Ctx) error {
+	startDateStr := c.Query("start_date")
+	endDateStr := c.Query("end_date")
+	mmsiStr := c.Query("mmsi")
+	anomalyType := c.Query("type")
+
+	// Needs to start with a where query to append later
+	query := `
+		SELECT 
+			id, 
+			type, 
+			mmsi, 
+			started_at, 
+			last_activity_at,
+			ST_Y(position) as latitude,
+			ST_X(position) as longitude
+		FROM anomaly_groups
+		WHERE 1=1
+	`
+
+	// Got help from ai to get the idea of making a param tracker
+	var args[]interface{}
+	paramIndex := 1
+
+	if startDateStr != "" {
+		startDate, err := parseDate(startDateStr)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(models.ErrorResponse{
+				Error:   "invalid_start_date",
+				Message: "Invalid start_date format.",
+			})
+		}
+		// Got help from AI to be able to add multiple lines to the query
+		query += fmt.Sprintf(" AND started_at >= $%d", paramIndex)
+		args = append(args, startDate)
+		paramIndex++
+	} 
+	
+	if 
+}
+
 // GetAnomalyGroupsByMMSI godoc
 // @Summary Get anomaly groups by MMSI
 // @Tags anomaly-groups
