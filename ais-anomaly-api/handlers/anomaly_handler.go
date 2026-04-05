@@ -18,7 +18,7 @@ type AnomalyHandler struct {
 func NewAnomalyHandler(db *sql.DB) *AnomalyHandler {
 	return &AnomalyHandler{db: db}
 }
-
+/**
 // GetAnomalyGroups godoc
 // @Summary Get anomaly groups
 // @Tags anomaly-groups
@@ -112,14 +112,26 @@ func (h *AnomalyHandler) GetAnomalyGroups(c *fiber.Ctx) error {
 
 	return c.JSON(models.AnomalyGroupsToGeoJSON(anomalyGroups))
 }
+*/
 
+// GetAnomalyGroups godoc
+// @Summary Get anomaly groups with optional filters
+// @Tags anomaly-groups
+// @Param start_date query string false "Start date (YYYY-MM-DD)"
+// @Param end_date query string false "End date (YYYY-MM-DD)"
+// @Param mmsi query int false "MMSI filter"
+// @Param type query string false "Anomaly type filter"
+// @Success 200 {object} models.GeoJSONFeatureCollection
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /anomaly-groups [get]
 func (h *AnomalyHandler) GetAnomalyGroups(c *fiber.Ctx) error {
 	startDateStr := c.Query("start_date")
 	endDateStr := c.Query("end_date")
 	mmsiStr := c.Query("mmsi")
 	anomalyType := c.Query("type")
 
-	// Needs to start with a where query to append later
+	// Needs to start with a where query to make it able to append later
 	query := `
 		SELECT 
 			id, 
@@ -145,13 +157,179 @@ func (h *AnomalyHandler) GetAnomalyGroups(c *fiber.Ctx) error {
 				Message: "Invalid start_date format.",
 			})
 		}
-		// Got help from AI to be able to add multiple lines to the query
+		// Got help from AI to be able to add multiple lines to the query without error messages
 		query += fmt.Sprintf(" AND started_at >= $%d", paramIndex)
 		args = append(args, startDate)
 		paramIndex++
 	} 
 	
-	if 
+	if endDateStr != "" {
+		endDate, err := parseDate(endDateStr)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(models.ErrorResponse{
+				Error:   "invalid_end_date",
+				Message: "Invalid end_date format. Use YYYY-MM-DD or RFC3339 format.",
+			})
+		}
+		query += fmt.Sprintf(" AND started_at <= $%d", paramIndex)
+		args = append(args, endDate)
+		paramIndex++
+	}
+
+	if mmsiStr != "" {
+		mmsi, err := strconv.ParseInt(mmsiStr, 10, 64)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(models.ErrorResponse{
+				Error:   "invalid_mmsi",
+				Message: "Invalid MMSI format.",
+			})
+		}
+		query += fmt.Sprintf(" AND mmsi = $%d", paramIndex)
+		args = append(args, mmsi)
+		paramIndex++
+	}
+
+	if anomalyType != "" {
+		query += fmt.Sprintf(" AND type = $%d", paramIndex)
+		args = append(args, anomalyType)
+		paramIndex++
+	}
+
+	// Order by is always last so it needs to be added here.
+	query += " ORDER BY started_at DESC"
+
+	// Logic to handle query's 
+	rows, err := h.db.Query(query, args...)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(models.ErrorResponse{
+			Error:   "databaseError",
+			Message: "Failed to query anomaly groups.",
+		})
+	}
+	defer rows.Close()
+
+	// Then we hold all the GeoJSON Features
+	var features[]models.GeoJSONFeature
+
+	for rows.Next() {
+		var ag models.AnomalyGroup
+
+		err := rows.Scan(
+		&ag.ID,
+		&ag.Type,
+		&ag.MMSI,
+		&ag.StartedAt,
+		&ag.LastActivityAt,
+		&ag.Latitude,
+		&ag.Longitude,
+	)
+	if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(models.ErrorResponse{
+				Error:   "scanError",
+				Message: "Failed to parse anomaly group data.",
+			})
+		}
+
+		// Used some help from AI for this query in the loop
+		anomalyQuery := `
+			SELECT 
+				id, 
+				type, 
+				metadata, 
+				created_at, 
+				mmsi, 
+				anomaly_group_id, 
+				data_source,
+				source_id,
+				signal_strength
+			FROM anomalies
+			WHERE anomaly_group_id = $1
+			ORDER BY created_at DESC
+		`
+
+		anomalyRows, err := h.db.Query(anomalyQuery, ag.ID)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(models.ErrorResponse{
+				Error:   "databaseError",
+				Message: "Failed to query anomalies.",
+			})
+		}
+
+		// Used AI to help create the anomalyRows Loop to make sure data was handled and parsed properly
+		var anomalies[]models.Anomaly
+		for anomalyRows.Next() {
+			var aDB models.AnomalyDB
+			err := anomalyRows.Scan(
+				&aDB.ID,
+				&aDB.Type,
+				&aDB.Metadata,
+				&aDB.CreatedAt,
+				&aDB.MMSI,
+				&aDB.AnomalyGroupID,
+				&aDB.DataSource,
+				&aDB.SourceID,
+				&aDB.SignalStrength,
+			)
+			if err != nil {
+				anomalyRows.Close() 
+				return c.Status(fiber.StatusInternalServerError).JSON(models.ErrorResponse{
+					Error:   "scanError",
+					Message: "Failed to parse anomaly data.",
+				})
+			}
+			anomalies = append(anomalies, aDB.ToAPIAnomaly())
+		}
+		anomalyRows.Close()
+
+
+		if anomalies == nil {
+				anomalies =[]models.Anomaly{}
+		}
+
+		// Convert anomalies to a slice of maps for GeoJSON properties
+		anomalyData := make([]map[string]interface{}, len(anomalies))
+		for i, a := range anomalies {
+			anomalyMap := map[string]interface{}{
+				"id":             a.ID,
+				"metadata":       a.Metadata,
+				"createdAt":      a.CreatedAt,
+				"anomalyGroupId": a.AnomalyGroupID,
+				"dataSource":     a.DataSource,
+			}
+			if a.SourceID != nil {
+				anomalyMap["sourceId"] = *a.SourceID
+			}
+			if a.SignalStrength != nil {
+				anomalyMap["signalStrength"] = *a.SignalStrength
+			}
+			anomalyData[i] = anomalyMap
+		}
+
+		// Build GeoJSON Feature with anomalies included
+		feature := models.GeoJSONFeature{
+			Type: "Feature",
+			Geometry: models.GeoJSONGeometry{
+				Type:        "Point",
+				Coordinates: []float64{ag.Longitude, ag.Latitude},
+			},
+			Properties: map[string]interface{}{
+				"id":             ag.ID,
+				"type":           ag.Type,
+				"mmsi":           ag.MMSI,
+				"startedAt":      ag.StartedAt,
+				"lastActivityAt": ag.LastActivityAt,
+				"anomalies":      anomalyData,
+			},
+		}
+		features = append(features, feature)
+	}
+
+
+	return c.JSON(models.GeoJSONFeatureCollection{
+		Type:	"FeatureCollection",
+		Features: features,
+	})
+
 }
 
 // GetAnomalyGroupsByMMSI godoc
