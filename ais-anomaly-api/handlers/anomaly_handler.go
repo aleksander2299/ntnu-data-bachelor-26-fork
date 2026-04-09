@@ -132,11 +132,9 @@ func (h *AnomalyHandler) GetAnomalyGroups(c *fiber.Ctx) error {
 	anomalyType := c.Query("type")
 
 	// Needs to start with a where query to make it able to append later
-	query := `
+	anomalyQuery := `
 		SELECT 
-			id, 
-			type, 
-			mmsi, 
+			id,
 			started_at, 
 			last_activity_at,
 			ST_Y(position) as latitude,
@@ -144,8 +142,6 @@ func (h *AnomalyHandler) GetAnomalyGroups(c *fiber.Ctx) error {
 		FROM anomaly_groups
 		WHERE 1=1
 	`
-
-	// Got help from ai to get the idea of making a param tracker
 	var args[]interface{}
 	paramIndex := 1
 
@@ -194,6 +190,88 @@ func (h *AnomalyHandler) GetAnomalyGroups(c *fiber.Ctx) error {
 		args = append(args, anomalyType)
 		paramIndex++
 	}
+
+	query += " ORDER BY started_at DESC"
+
+	rows, err := h.db.Query(query, args...)
+	if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(models.ErrorResponse{
+				Error:   "databaseError",
+				Message: "Failed to query anomalies",
+			})
+		}
+	defer rows.Close()
+
+	// Quick lookup to reduce complexity
+	groupMap := make(map[int64]*models.AnomalyGroupWithAnomalies)
+
+	// Slices to hold the argument for the second query
+	var groupIDs []interface{}
+	var placeholders[]string
+	inParamIndex := 1
+
+	for rows.Next() {
+		var ag models.AnomalyGroupWithAnomalies
+		err := rows.Scan(&ag.ID, &ag.Type, &ag.MMSI, &ag.StartedAt, &ag.LastActivityAt, &ag.Latitude, &ag.Longitude)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(models.ErrorResponse{
+				Error:   "scanError",
+				Message: "Failed to parse anamaly group data.",
+			})
+		}
+
+		// Adding to the map and list to reduce time compexity
+		ag.Anomalies  = []models.Anomaly{}
+		anomalyMap[a.ID] = &a
+		anomalyIDs = append(anomalyIDs, a.id)
+
+		placeholders = append(placeholders, fmt.Sprintf("$%d", paramIndex))
+		paramIndex++
+	}
+
+	// Stop code early if empty
+	if len(anomalyIDs) == 0 {
+		return c.JSON([]Anomaly{})
+	}
+
+	// Second query to get id mmsi and type as well.
+	inClause := strings.Join(placeholders, ",")
+	anomalyGroupQuery := fmt.Sprintf(`
+		SELECT 
+			id,
+			mmsi, 
+			type
+		FROM anomaly_groups
+		ORDER BY started_at DESC
+	`, inClause)
+
+	anomalyGroupRows, err := h.db.Query(anomalyGroupQuery, anomalyIDs...)
+	if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(models.ErrorResponse{
+				Error:   "databaseError",
+				Message: "Failed to query anomalies",
+			})
+		}
+	defer anomalyGroupRows.Close()
+
+	for anomalyGroupRows.Next() {
+		var ag anomalyGroup 
+		err := anomalyGroupRows.Scan(&ag.ID, &ag.mmsi, &ag.type)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(models.ErrorResponse{
+				Error:   "scanError",
+				Message: "Failed to parse anamaly data.",
+			})
+		}
+
+		if anomaly, exists := anomalyMap[ag.ID]; exists {
+			anomaly.anomalyGroup = append(anomaly.anomalyGroup, ag)
+		}
+	}
+
+	var finalResult[]anomaly
+
+	return c.JSON(finalResult)
 
 	// Order by is always last so it needs to be added here.
 	query += " ORDER BY started_at DESC"
