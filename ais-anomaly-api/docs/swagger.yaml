@@ -23,30 +23,6 @@ definitions:
         example: 1
         type: integer
     type: object
-  models.AnomalyGroup:
-    properties:
-      id:
-        example: 1
-        type: integer
-      lastActivityAt:
-        example: "2024-01-15T14:30:00Z"
-        type: string
-      latitude:
-        example: 59.9139
-        type: number
-      longitude:
-        example: 10.7522
-        type: number
-      mmsi:
-        example: 123456789
-        type: integer
-      startedAt:
-        example: "2024-01-15T10:30:00Z"
-        type: string
-      type:
-        example: speed_anomaly
-        type: string
-    type: object
   models.AnomalyGroupWithAnomalies:
     properties:
       anomalies:
@@ -150,13 +126,21 @@ paths:
         in: query
         name: end_date
         type: string
+      - description: MMSI filter
+        in: query
+        name: mmsi
+        type: integer
+      - description: Anomaly type filter
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/models.AnomalyGroup'
-            type: array
+            $ref: '#/definitions/models.GeoJSONFeatureCollection'
         "400":
           description: Bad Request
           schema:
@@ -165,7 +149,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-      summary: Get anomaly groups
+      summary: Get anomaly groups with optional filters
       tags:
       - anomaly-groups
   /anomaly-groups/{id}:
@@ -194,6 +178,30 @@ paths:
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       summary: Get anomaly group by ID
+      tags:
+      - anomaly-groups
+  /anomaly-groups/mmsi/{mmsi}:
+    get:
+      parameters:
+      - description: MMSI
+        in: path
+        name: mmsi
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.GeoJSONFeatureCollection'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get anomaly groups by MMSI
       tags:
       - anomaly-groups
   /base-stations:

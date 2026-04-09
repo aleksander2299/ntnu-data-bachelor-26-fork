@@ -26,26 +26,28 @@ func NewBaseStationHandler() *BaseStationHandler {
 }
 
 // GetBaseStations godoc
-// @Summary Get all base stations
-// @Description Returns all base stations along the Norwegian coast as GeoJSON
-// @Tags base-stations
-// @Produce json
-// @Success 200 {object} models.GeoJSONFeatureCollection
-// @Router /base-stations [get]
+//
+//	@Summary		Get all base stations
+//	@Description	Returns all base stations along the Norwegian coast as GeoJSON
+//	@Tags			base-stations
+//	@Produce		json
+//	@Success		200	{object}	models.GeoJSONFeatureCollection
+//	@Router			/base-stations [get]
 func (h *BaseStationHandler) GetBaseStations(c *fiber.Ctx) error {
 	return c.JSON(models.BaseStationsToGeoJSON(baseStations))
 }
 
 // GetBaseStationByID godoc
-// @Summary Get base station by ID
-// @Description Returns a single base station by its ID
-// @Tags base-stations
-// @Produce json
-// @Param id path int true "Base Station ID"
-// @Success 200 {object} models.BaseStation
-// @Failure 400 {object} models.ErrorResponse
-// @Failure 404 {object} models.ErrorResponse
-// @Router /base-stations/{id} [get]
+//
+//	@Summary		Get base station by ID
+//	@Description	Returns a single base station by its ID
+//	@Tags			base-stations
+//	@Produce		json
+//	@Param			id	path		int	true	"Base Station ID"
+//	@Success		200	{object}	models.BaseStation
+//	@Failure		400	{object}	models.ErrorResponse
+//	@Failure		404	{object}	models.ErrorResponse
+//	@Router			/base-stations/{id} [get]
 func (h *BaseStationHandler) GetBaseStationByID(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil {

@@ -16,11 +16,11 @@ import (
 	"github.com/kyv-ekstern/ntnu-bachelor-26-ais-anomaly-api/handlers"
 )
 
-// @title AIS Anomaly Detection API
-// @version 1.0
-// @description API for querying AIS anomaly detection data
-// @host localhost:3000
-// @BasePath /api/v1
+// @title			AIS Anomaly Detection API
+// @version		1.0
+// @description	API for querying AIS anomaly detection data
+// @host			localhost:3000
+// @BasePath		/api/v1
 func main() {
 	// Initialize database connection
 	database, err := db.Connect()

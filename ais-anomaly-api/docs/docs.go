@@ -17,10 +17,13 @@ const docTemplate = `{
     "paths": {
         "/anomaly-groups": {
             "get": {
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "anomaly-groups"
                 ],
-                "summary": "Get anomaly groups",
+                "summary": "Get anomaly groups with optional filters",
                 "parameters": [
                     {
                         "type": "string",
@@ -33,16 +36,62 @@ const docTemplate = `{
                         "description": "End date (YYYY-MM-DD)",
                         "name": "end_date",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "MMSI filter",
+                        "name": "mmsi",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Anomaly type filter",
+                        "name": "type",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.AnomalyGroup"
-                            }
+                            "$ref": "#/definitions/models.GeoJSONFeatureCollection"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/anomaly-groups/mmsi/{mmsi}": {
+            "get": {
+                "tags": [
+                    "anomaly-groups"
+                ],
+                "summary": "Get anomaly groups by MMSI",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "MMSI",
+                        "name": "mmsi",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.GeoJSONFeatureCollection"
                         }
                     },
                     "400": {
@@ -195,39 +244,6 @@ const docTemplate = `{
                 "sourceId": {
                     "type": "integer",
                     "example": 1
-                }
-            }
-        },
-        "models.AnomalyGroup": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "lastActivityAt": {
-                    "type": "string",
-                    "example": "2024-01-15T14:30:00Z"
-                },
-                "latitude": {
-                    "type": "number",
-                    "example": 59.9139
-                },
-                "longitude": {
-                    "type": "number",
-                    "example": 10.7522
-                },
-                "mmsi": {
-                    "type": "integer",
-                    "example": 123456789
-                },
-                "startedAt": {
-                    "type": "string",
-                    "example": "2024-01-15T10:30:00Z"
-                },
-                "type": {
-                    "type": "string",
-                    "example": "speed_anomaly"
                 }
             }
         },
