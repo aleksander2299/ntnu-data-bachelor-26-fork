@@ -126,6 +126,17 @@ docker compose down -v
 
 ---
 
+##Populere databasen med egendefinert data:
+
+docker compose --profile geojson-seed up --build
+
+kommandoen er basert på denne linjen i docker-compose.yml
+
+command: ["/db-migration", "-geojson-seed", "-reseed", "-anomaly-limit", "${ANOMALY_LIMIT:-100000}"]
+
+man kan endre tallet i ANOMALY_LIMIT for å endre hvor mange anomalier som blir generert i docker-compose.yml filen. 
+
+
 ## Miljøvariabler
 
 Følgende miljøvariabler kan konfigureres:
