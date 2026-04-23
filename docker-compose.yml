@@ -87,7 +87,7 @@ services:
       DB_USER: postgres
       DB_PASSWORD: birdsarentreal
       DB_NAME: ais
-    command: ["/db-migration", "-geojson-seed", "-reseed", "-anomaly-limit", "${ANOMALY_LIMIT:-1000}"]
+    command: ["/db-migration", "-geojson-seed", "-reseed", "-anomaly-limit", "${ANOMALY_LIMIT:-100000}"]
     profiles:
       - geojson-seed
 

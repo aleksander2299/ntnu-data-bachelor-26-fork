@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"fmt"
+	"encoding/json"
 	"strconv"
 	"time"
 
@@ -297,15 +298,14 @@ func (h *AnomalyHandler) GetAnomalyGroupsByMMSI(c *fiber.Ctx) error {
 }
 
 // GetAnomalyGroupByID godoc
-//
-//	@Summary	Get anomaly group by ID
-//	@Tags		anomaly-groups
-//	@Param		id	path		int	true	"Anomaly Group ID"
-//	@Success	200	{object}	models.AnomalyGroupWithAnomalies
-//	@Failure	400	{object}	models.ErrorResponse
-//	@Failure	404	{object}	models.ErrorResponse
-//	@Failure	500	{object}	models.ErrorResponse
-//	@Router		/anomaly-groups/{id} [get]
+// @Summary Get anomaly group by ID
+// @Tags anomaly-groups
+// @Param id path int true "Anomaly Group ID"
+// @Success 200 {object} models.GeoJSONFeatureCollection
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /anomaly-groups/{id} [get]
 func (h *AnomalyHandler) GetAnomalyGroupByID(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
@@ -405,14 +405,26 @@ func (h *AnomalyHandler) GetAnomalyGroupByID(c *fiber.Ctx) error {
 		anomalies = append(anomalies, aDB.ToAPIAnomaly())
 	}
 
-	if anomalies == nil {
-		anomalies = []models.Anomaly{}
-	}
+	// Build a FeatureCollection with the group's metadata at the top level
+	// and one homogeneous feature per anomaly.
+	features := make([]models.GeoJSONFeature, 0, len(anomalies))
 
-	// Convert anomalies to a slice of maps for GeoJSON properties
-	anomalyData := make([]map[string]interface{}, len(anomalies))
-	for i, a := range anomalies {
-		anomalyMap := map[string]interface{}{
+	for _, a := range anomalies {
+		// Use the first position report from metadata as the anomaly's geometry,
+		// falling back to the group's position if none are present.
+		lon, lat := ag.Longitude, ag.Latitude
+		var meta struct {
+			PositionReports []struct {
+				Latitude  float64 `json:"latitude"`
+				Longitude float64 `json:"longitude"`
+			} `json:"positionReports"`
+		}
+		if err := json.Unmarshal(a.Metadata, &meta); err == nil && len(meta.PositionReports) > 0 {
+			lon = meta.PositionReports[0].Longitude
+			lat = meta.PositionReports[0].Latitude
+		}
+
+		props := map[string]interface{}{
 			"id":             a.ID,
 			"metadata":       a.Metadata,
 			"createdAt":      a.CreatedAt,
@@ -420,32 +432,33 @@ func (h *AnomalyHandler) GetAnomalyGroupByID(c *fiber.Ctx) error {
 			"dataSource":     a.DataSource,
 		}
 		if a.SourceID != nil {
-			anomalyMap["sourceId"] = *a.SourceID
+			props["sourceId"] = *a.SourceID
 		}
 		if a.SignalStrength != nil {
-			anomalyMap["signalStrength"] = *a.SignalStrength
+			props["signalStrength"] = *a.SignalStrength
 		}
-		anomalyData[i] = anomalyMap
+
+		features = append(features, models.GeoJSONFeature{
+			Type: "Feature",
+			Geometry: models.GeoJSONGeometry{
+				Type:        "Point",
+				Coordinates: []float64{lon, lat},
+			},
+			Properties: props,
+		})
 	}
 
-	// Build GeoJSON Feature with anomalies included
-	feature := models.GeoJSONFeature{
-		Type: "Feature",
-		Geometry: models.GeoJSONGeometry{
-			Type:        "Point",
-			Coordinates: []float64{ag.Longitude, ag.Latitude},
-		},
+	return c.JSON(models.GeoJSONFeatureCollection{
+		Type: "FeatureCollection",
 		Properties: map[string]interface{}{
 			"id":             ag.ID,
 			"type":           ag.Type,
 			"mmsi":           ag.MMSI,
 			"startedAt":      ag.StartedAt,
 			"lastActivityAt": ag.LastActivityAt,
-			"anomalies":      anomalyData,
 		},
-	}
-
-	return c.JSON(feature)
+		Features: features,
+	})
 }
 
 // parseDate attempts to parse a date string in multiple formats
